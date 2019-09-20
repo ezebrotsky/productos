@@ -8,7 +8,6 @@ import requests
 from bs4 import BeautifulSoup
 import sys
 import re
-import time
 
 reload(sys)
 
@@ -26,10 +25,16 @@ categoriasCoto = soupCoto.find_all(id=regexCategoriasCoto)
 ## Función que recorre cada producto
 def recorreProducto(producto):
     for i in producto:
-        #time.sleep(10)
         descripcion = i.find(class_='span_productName').find(class_='descrip_full').get_text()
-        precio = i.find_next(class_='atg_store_newPrice').get_text().replace('PRECIO CONTADO', '').replace('\n ', '').strip()
-        #print(i.find_next(class_='atg_store_productPrice').remove('style'))
+        ## Recorro todos los precios que haya
+        key = -1
+        precios = []
+        for item in i.find_all_next(string=True):
+            key = key+1
+            if (item.find('$') != -1):
+                precios.append(i.find_all_next(string=True)[key].replace('\n', '').strip())
+        ## Guardo solo el precio de contado
+        precio = precios[1]       
         print(descripcion + ' - ' + precio)
     pass
 
@@ -38,7 +43,7 @@ try:
     for cat in categoriasCoto:
         linksCoto = cat.find_all('a')
         for link in linksCoto:
-            print("Producto: " + link.get_text())
+            print(link.get_text().strip())
 
             href = link.get('href')
             rHref = requests.get('https://www.cotodigital3.com.ar'+href)
@@ -51,9 +56,8 @@ try:
                 li = ulPaginadoCoto.find_all('li')
                 for pagina in li:
                     # Si no está seleccionada la página
+                    print("Pagina: " + pagina.get_text().replace('\n', ''))
                     if (pagina.find('a') and pagina.find('a').get('href')):
-                        print("Pagina: " + pagina.get_text().replace('\n', ''))
-
                         rPage = pagina.find('a').get('href')
                         
                         rHrefPage = requests.get('https://www.cotodigital3.com.ar'+rPage)
@@ -63,12 +67,13 @@ try:
                         productos = soupPageHref.find_all(class_='product_info_container')
                         recorreProducto(productos)
                     # Si la página está seleccionada lo hago una vez
-                    else:
+                    elif (pagina.find('a') and not pagina.find('a').get('href')):
                         ## Título del producto: 
                         productos = soupPage.find_all(class_='product_info_container')
                         recorreProducto(productos)
             # Si no tiene paginado
             else:
+                print("Pagina: 1")
                 ## Título del producto: 
                 productos = soupPage.find_all(class_='product_info_container')
                 recorreProducto(productos)
