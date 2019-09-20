@@ -33,8 +33,11 @@ def recorreProducto(producto):
             key = key+1
             if (item.find('$') != -1):
                 precios.append(i.find_all_next(string=True)[key].replace('\n', '').strip())
-        ## Guardo solo el precio de contado
-        precio = precios[1]       
+        
+        ## 0: Precio x kilo
+        ## 1: Precio al contado
+        ## 2: Precio con oferta
+        precio = precios[1]
         print(descripcion + ' - ' + precio)
     pass
 
